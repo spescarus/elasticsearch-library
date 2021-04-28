@@ -1,0 +1,251 @@
+﻿@page
+@model ElasticSearch.Demo.UI.Pages.Products.ProductsListModel
+@{
+    ViewData["Title"] = "Products";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="form-group">
+    <div id="tblProducts_filter" class="dataTables_filter">
+        <label>Search:<input id="searchText" type="search" class="form-control form-control-sm" placeholder="Search..." aria-controls="tblProducts"></label>
+    </div>
+    <select  id="idSupplier" name="suppliers[]" class="select" data-mdb-filter="true" multiple data-mdb-visible-options="5" asp-items="Model.Suppliers">
+    </select>
+    
+    <select  id="idCategory" name="categories[]" class="select" data-mdb-filter="true" multiple data-mdb-visible-options="5" asp-items="Model.Categories">
+    </select>
+
+    <table border="0" cellspacing="5" cellpadding="5">
+        <tbody><tr>
+            <td>Minimum id:</td>
+            <td><input type="text" id="min" name="min"></td>
+        </tr>
+        <tr>
+            <td>Maximum id:</td>
+            <td><input type="text" id="max" name="max"></td>
+        </tr>
+        </tbody></table>
+</div>
+
+<table id="tblProducts" class="table table-striped table-bordered" style="width: 100%">
+    <thead>
+        <tr>
+            <th>
+                Id
+            </th>
+            <th>
+                Name
+            </th>
+            <th>
+                Category
+            </th>
+            <th>
+                Supplier
+            </th>
+            <th>
+                Quantity Per Unit
+            </th>
+            <th>
+                Units In Stock
+            </th>
+            <th>
+                Units On Order
+            </th>
+            <th>
+                Unit Price
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+@section scripts{
+    <script type="text/javascript">
+
+        $(document).ready(function() {
+            var filtersCriteria = [];
+
+            $('#tblProducts').DataTable({
+                // Design Assets
+                stateSave: false,
+                autoWidth: true,
+                // ServerSide Setups
+                processing: true,
+                serverSide: true,
+                // Paging Setups
+                paging: true,
+                // Searching Setups
+                searching: { regex: true },
+                dom: '<"top"i>rt<"bottom"lp><"clear">',
+                // Ajax Filter
+                ajax: {
+                    url: '/api/products',
+                    type: "POST",
+                    dataType: 'json',
+                    contentType: "application/json;charset=UTF-8",
+                    headers: { 'RequestVerificationToken': $('@Html.AntiForgeryToken()').val() },
+                    data: function(data) {
+                        data.filtersCriteria = filtersCriteria;
+                        return JSON.stringify(data);
+                    }
+                },
+                columns: [
+                    { data: "id" },
+                    { data: "productName" },
+                    { data: "category.categoryName" },
+                    { data: "supplier.companyName" },
+                    { data: "quantityPerUnit" },
+                    { data: "unitsInStock" },
+                    { data: "unitsOnOrder" },
+                    { data: "unitPrice" }
+                ],
+                order: [0, "asc"]
+            });
+
+            var table = $('#tblProducts').DataTable();
+
+            $("#searchText").autocomplete({
+                source: function() {
+                    filtersCriteria = [];
+                    searchProducts();
+                },
+                minLength: 0
+            });
+
+            $('#min').keyup(function () {
+                filtersCriteria = [];
+                searchProducts();
+                table.draw();
+            });
+
+            $('#max').keyup(function () {
+                filtersCriteria = [];
+                searchProducts();
+                table.draw();
+            });
+
+            $('#idSupplier').multiselect({
+                enableFiltering: true,
+                filterPlaceholder: 'Search supplier',
+                nonSelectedText: 'No supplier selected',
+                enableCaseInsensitiveFiltering: true,
+                includeSelectAllOption: false,
+                dropRight: true,
+                maxHeight: 300,
+                onChange: function(element, checked) {
+                    filtersCriteria = [];
+                    searchProducts();
+                }
+            });
+
+            $('#idCategory').multiselect({
+                enableFiltering: true,
+                filterPlaceholder: 'Search category',
+                nonSelectedText: 'No category selected',
+                enableCaseInsensitiveFiltering: true,
+                includeSelectAllOption: false,
+                dropRight: true,
+                maxHeight: 300,
+                onChange: function (element, checked) {
+                    filtersCriteria = [];
+                    searchProducts();
+                }
+            });
+
+            function searchProducts() {
+                addSupplierFilters();
+                addCategoryFilters();
+                addIdRangeFilters();
+                table.search($('#searchText').val());
+                table.draw();
+            }
+
+            function addSupplierFilters() {
+                var selectedOptions = $('#idSupplier').val();
+                $.each(selectedOptions,
+                    function(index, item) {
+                        if (item !== "") {
+                            var supplierFilter = {
+                                propertyEntityName: "supplier",
+                                propertyName: "id",
+                                propertyFilterValue: {
+                                    type: "Numeric",
+                                    value: item
+                                }
+                            }
+                            filtersCriteria.push(supplierFilter);
+                        }
+                    });
+            }
+
+            function addCategoryFilters() {
+                var selectedOptions = $('#idCategory').val();
+                $.each(selectedOptions,
+                    function (index, item) {
+                        if (item !== "") {
+                            var categoryFilter = {
+                                propertyEntityName: "category",
+                                propertyName: "id",
+                                propertyFilterValue: {
+                                    type: "Numeric",
+                                    value: item
+                                }
+                            }
+                            filtersCriteria.push(categoryFilter);
+                        }
+                    });
+            }
+
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    var min = parseInt($('#min').val(), 10);
+                    var max = parseInt($('#max').val(), 10);
+
+                    if (isNaN(min) && isNaN(max)) {
+                        return true;
+                    }
+                    return false;
+                }
+            );
+
+            function addIdRangeFilters() {
+                addMinIdFilter();
+                addMaxFilter();
+            }
+
+            function addMinIdFilter() {
+                var min = parseInt($('#min').val(), 10);
+                if (!isNaN(min)) {
+
+                    var minIdFilter = {
+                        propertyName: "id",
+                        operator: "GreaterThanOrEqual",
+                        propertyFilterValue: {
+                            type: "Numeric",
+                            value: min
+                        }
+                    }
+                    filtersCriteria.push(minIdFilter);
+                }
+            }
+
+            function addMaxFilter() {
+                var max = parseInt($('#max').val(), 10);
+                if (!isNaN(max)) {
+
+                    var maxIdFilter = {
+                        propertyName: "id",
+                        operator: "LessThanOrEquals",
+                        propertyFilterValue: {
+                            type: "Numeric",
+                            value: max
+                        }
+                    }
+                    filtersCriteria.push(maxIdFilter);
+                }
+            }
+        });
+    </script>
+}

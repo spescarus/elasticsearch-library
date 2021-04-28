@@ -1,0 +1,7 @@
+<Project>
+	<Import Project="version.props" />
+	<PropertyGroup>
+		<BaseNamespace>SP.ElasticSearchLibrary</BaseNamespace>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+</Project>

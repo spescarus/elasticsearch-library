@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <RootNamespace>$(BaseNamespace)</RootNamespace>
+
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Remove="Directory.Build.props" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="10.1.1" />
+      <PackageReference Include="CSharpFunctionalExtensions" Version="2.15.1" />
+      <PackageReference Include="NEST" Version="7.11.1" />
+      <PackageReference Include="NEST.JsonNetSerializer" Version="7.11.1" />
+    </ItemGroup>
+
+</Project>

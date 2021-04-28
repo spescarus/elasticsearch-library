@@ -1,0 +1,22 @@
+{
+    "version": "1.0",
+    "defaultProvider": "cdnjs",
+    "libraries": [
+        {
+            "library": "bootstrap-multiselect@0.9.16",
+            "destination": "wwwroot/bootstrap-multiselect/"
+        },
+        {
+            "library": "jqueryui@1.12.1",
+            "destination": "wwwroot/jqueryui/"
+        },
+        {
+            "library": "jqueryui@1.12.1",
+            "destination": "wwwroot/jqueryui/"
+        },
+        {
+            "library": "datatables@1.10.21",
+            "destination": "wwwroot/datatables/"
+        }
+    ]
+}
