@@ -34,7 +34,6 @@ namespace SP.ElasticSearchLibrary
                 };
                 type.Analyzer       = "standard";
                 type.SearchAnalyzer = "standard";
-                type.IndexPhrases   = true;
             }
 
             base.Visit(type, propertyInfo, attribute);
