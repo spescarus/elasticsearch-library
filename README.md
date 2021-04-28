@@ -108,28 +108,28 @@ In .NET core and .NET 5 Elasic Search can be initialized using depency injection
 Call the following method in Startup.cs
 
 ```c#
-private static void InitializeElasticSearch(IServiceCollection services, IConfiguration configuration, IHostingEnvironment environment = null)
-{
-	var connectionString = $"{configuration["ElasticSearch:Connection"]}";
-	var numberOfReplicasConfig = $"{configuration["ElasticSearch:NumberOfReplicas"]}";
-	var numberOfShardsConfig = $"{configuration["ElasticSearch:NumberOfShards"]}";
+		private static void InitializeElasticSearch(IServiceCollection services, IConfiguration configuration, IHostingEnvironment environment = null)
+        {
+            var connectionString       = $"{configuration["ElasticSearch:Connection"]}";
+            var numberOfReplicasConfig = $"{configuration["ElasticSearch:NumberOfReplicas"]}";
+            var numberOfShardsConfig   = $"{configuration["ElasticSearch:NumberOfShards"]}";
 
-	if (string.IsNullOrWhiteSpace(numberOfReplicasConfig) || int.TryParse(numberOfReplicasConfig, out var numberOfReplicas) == false)
-	{
-		numberOfReplicas = 5;
-	}
+            if (string.IsNullOrWhiteSpace(numberOfReplicasConfig) || int.TryParse(numberOfReplicasConfig, out var numberOfReplicas) == false)
+            {
+                numberOfReplicas = 5;
+            }
 
-	if (string.IsNullOrWhiteSpace(numberOfShardsConfig) || int.TryParse(numberOfShardsConfig, out var numberOfShards))
-	{
-		numberOfShards = 5;
-	}
+            if (string.IsNullOrWhiteSpace(numberOfShardsConfig) || int.TryParse(numberOfShardsConfig, out var numberOfShards))
+            {
+                numberOfShards = 5;
+            }
 
-		var enableDebugMode = environment != null && environment.IsDevelopment();
+            var enableDebugMode = environment != null && environment.IsDevelopment();
 
-	services.AddSingleton(new ElasticSearchSettings(numberOfReplicas, numberOfShards));
-	services.AddSingleton<IElasticClient>(ElasticSearchSetup.Initialize(connectionString, enableDebugMode));
-	services.AddSingleton<ISearchService, SearchService>();
-}
+            services.AddSingleton(new ElasticSearchSettings(numberOfReplicas, numberOfShards));
+            services.AddSingleton<IElasticClient>(ElasticSearchSetup.Initialize(connectionString, true));
+            services.AddSingleton<IElasticSearchService, ElasticSearchService>();
+        }
 ```
 
 # How to index data?
