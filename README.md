@@ -138,6 +138,25 @@ When you add a new entity the index will be created automaticaly based on entity
 
 The object that is send to be indexed in Elastic search requires to have an **Id** property defined. The value from **Id** property is used to define the record **_id** in Elastic search. The Type for the **Id** property can be Guid, string, long, integer.
  
+**Note**: This library support only 1 level on nested object. Ex:
+
+```JSON
+{
+   "firstName":"first name",
+   "lastName":"Last name",
+   "address":{
+      "address1":"address1"
+   },
+   "roles":[
+      {
+         "name":"Admin"
+      },
+      {
+         "name":"Basic"
+      }
+   ]
+}
+```
 
 ## Add entity
 
@@ -210,3 +229,84 @@ An index need to be recreated in following situations:
 
 
 # How to perform search?
+
+To perform a search the JSON that is sent from UI need to have the following structure:
+```JSON
+{
+   "offset":0,
+   "limit":10,
+   "searchText":"an",
+   "filtersCriteria":[
+      {
+         "propertyName":"id",
+         "parentPropertyName":"supplier",
+         "operator":"Equal",
+         "strict":false,
+         "filterValue":{
+            "value":1,
+            "type":"Numeric"
+         }
+      },
+      {
+         "propertyName":"id",
+         "parentPropertyName":null,
+         "operator":"GreaterThanOrEqual",
+         "strict":false,
+         "filterValue":{
+            "value":1,
+            "type":"Numeric"
+         }
+      },
+      {
+         "propertyName":"id",
+         "parentPropertyName":null,
+         "operator":"LessThanOrEquals",
+         "strict":false,
+         "filterValue":{
+            "value":10,
+            "type":"Numeric"
+         }
+      }
+   ],
+   "sortOptions":[
+      {
+         "sortOrder":"Ascending",
+         "propertyName":"id",
+         "parentPropertyName":null
+      }
+   ]
+}
+```
+The Library is composing the query, filters and sorting based on this JSON.
+
+* **offset** - the page number
+* **limit** - number of items per page
+* **searchText** - the text that you search for
+* **filtersCriteria** - contains the list of filters
+	* **propertyName** - the name of the property from the JSON document indexed in Elastic Search
+	* **parentPropertyName** - Parent property name of nested object. Ex: Let say we have a indexed a document for users and inside we have a a nested object Address and inside this object a property **name**. In this particular case the **parentPropertyName** will be **address** and **propertyName** will be **name**.
+	* **operator** - define what type of operator to use for filters. The default value is Equal. This operator is used for range filters for numeric values or dates. The possible values for operator are:
+		* Equal 
+        * GreaterThan        
+        * GreaterThanOrEqual
+        * Different          
+        * LessThan           
+        * LessThanOrEquals  
+	* **strict** - In case of text filters if **strict** is true it will do an exact match, otherwise it will do a partial match
+	* **filterValue** - the value sent to filter the seach
+		* **value** - the value to filter
+		* **type** - type of the data. Thia are the supported types:
+			* Text    
+			* Numeric 
+			* Date    
+			* Guid    
+			* Boolean 
+
+* **sortOptions** - parameters for sorting
+	* **sortOrder** - direction of sorting. Possible values:
+		* Ascending  
+        * Descending 
+	* **propertyName** - same as fiterCriteria propertyName
+	* **parentPropertyName** - same as fiterCriteria parentPropertyName
+	
+	

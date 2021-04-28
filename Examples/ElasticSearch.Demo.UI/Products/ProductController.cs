@@ -54,7 +54,7 @@ namespace ElasticSearch.Demo.UI.Products
             var translatableProperty = dtParameters.SortColumn.Split('.');
             if (translatableProperty.Length == 2)
             {
-                sort.PropertyEntityName = translatableProperty[0];
+                sort.ParentPropertyName = translatableProperty[0];
                 sort.PropertyName       = translatableProperty[1];
             }
             else

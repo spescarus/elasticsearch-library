@@ -168,9 +168,9 @@
                     function(index, item) {
                         if (item !== "") {
                             var supplierFilter = {
-                                propertyEntityName: "supplier",
+                                parentPropertyName: "supplier",
                                 propertyName: "id",
-                                propertyFilterValue: {
+                                filterValue: {
                                     type: "Numeric",
                                     value: item
                                 }
@@ -186,9 +186,9 @@
                     function (index, item) {
                         if (item !== "") {
                             var categoryFilter = {
-                                propertyEntityName: "category",
+                                parentPropertyName: "category",
                                 propertyName: "id",
-                                propertyFilterValue: {
+                                filterValue: {
                                     type: "Numeric",
                                     value: item
                                 }
@@ -222,7 +222,7 @@
                     var minIdFilter = {
                         propertyName: "id",
                         operator: "GreaterThanOrEqual",
-                        propertyFilterValue: {
+                        filterValue: {
                             type: "Numeric",
                             value: min
                         }
@@ -238,7 +238,7 @@
                     var maxIdFilter = {
                         propertyName: "id",
                         operator: "LessThanOrEquals",
-                        propertyFilterValue: {
+                        filterValue: {
                             type: "Numeric",
                             value: max
                         }

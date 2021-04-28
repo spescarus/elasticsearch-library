@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Linq.Expressions;
 using Nest;
 using SP.ElasticSearchLibrary.Search.Args;
-using SP.ElasticSearchLibrary.Search.Exceptions;
 using SP.ElasticSearchLibrary.Search.Filters;
 
 namespace SP.ElasticSearchLibrary.Search
@@ -22,7 +19,7 @@ namespace SP.ElasticSearchLibrary.Search
                 return filters;
             }
 
-            var duplicateFields = searchArgs.FiltersCriteria.GroupBy(field => $"{field.PropertyEntityName}.{field.PropertyName}")
+            var duplicateFields = searchArgs.FiltersCriteria.GroupBy(field => $"{field.ParentPropertyName}.{field.PropertyName}")
                                             .Where(field => field.Count() > 1)
                                             .SelectMany(field => field)
                                             .ToList();
@@ -46,7 +43,7 @@ namespace SP.ElasticSearchLibrary.Search
         private static Func<QueryContainerDescriptor<TIndexItem>, QueryContainer> ComposeDuplicateFieldFilters(ICollection<FilterCriteriaArgs> duplicateFilterArgs)
         {
             var filterTypeInstance = ComposeFilterFactory.CreateInstance(duplicateFilterArgs.First()
-                                                                                            .PropertyFilterValue.Type);
+                                                                                            .FilterValue.Type);
             var filter = filterTypeInstance.ComposeFilter<TIndexItem>(duplicateFilterArgs);
 
             return filter;
@@ -54,7 +51,7 @@ namespace SP.ElasticSearchLibrary.Search
 
         private static Func<QueryContainerDescriptor<TIndexItem>, QueryContainer> ComposeFilter(FilterCriteriaArgs args)
         {
-            var filterTypeInstance = ComposeFilterFactory.CreateInstance(args.PropertyFilterValue.Type);
+            var filterTypeInstance = ComposeFilterFactory.CreateInstance(args.FilterValue.Type);
             var filter             = filterTypeInstance.ComposeFilter<TIndexItem>(args);
 
             return filter;

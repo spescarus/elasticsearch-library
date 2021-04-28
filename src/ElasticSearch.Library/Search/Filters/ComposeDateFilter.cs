@@ -13,15 +13,15 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         public Func<QueryContainerDescriptor<T>, QueryContainer> ComposeFilter<T>(ICollection<FilterCriteriaArgs> filterCriteriaArgs)
             where T : class
         {
-            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.PropertyEntityName}.{field.PropertyName}")
+            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.ParentPropertyName}.{field.PropertyName}")
                                                     .Where(field => field.Count() > 1)
                                                     .SelectMany(field => field)
                                                     .ToList();
 
             var firstDuplicateField = duplicateFields.First();
-            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.PropertyEntityName)
+            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.ParentPropertyName)
                                 ? firstDuplicateField.PropertyName
-                                : $"{firstDuplicateField.PropertyEntityName}.{firstDuplicateField.PropertyName}";
+                                : $"{firstDuplicateField.ParentPropertyName}.{firstDuplicateField.PropertyName}";
 
             var equalOperator = duplicateFields.Where(field => field.Operator == OperatorType.Equal)
                                                .ToList();
@@ -33,9 +33,9 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                                          .SelectMany(field => field)
                                          .ToList();
 
-            var duplicateOperatorRange = CreateRangeGroupForDuplicateField<T>(firstDuplicateField.PropertyEntityName, fieldName, duplicateOperatorFields);
-            var equalOperatorRange     = CreateRangeGroupForDuplicateField<T>(firstDuplicateField.PropertyEntityName, fieldName, equalOperator);
-            var differentOperatorRange = CreateDifferentOperatorFilter<T>(differentOperator, firstDuplicateField.PropertyEntityName, fieldName);
+            var duplicateOperatorRange = CreateRangeGroupForDuplicateField<T>(firstDuplicateField.ParentPropertyName, fieldName, duplicateOperatorFields);
+            var equalOperatorRange     = CreateRangeGroupForDuplicateField<T>(firstDuplicateField.ParentPropertyName, fieldName, equalOperator);
+            var differentOperatorRange = CreateDifferentOperatorFilter<T>(differentOperator, firstDuplicateField.ParentPropertyName, fieldName);
 
             IList<Func<QueryContainerDescriptor<T>, QueryContainer>> filters = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>
             {
@@ -50,7 +50,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                                                .ToList();
             if (uniqueFilters.Any())
             {
-                var uniqueFilter = CreateRangeForDuplicateField<T>(firstDuplicateField.PropertyEntityName, fieldName, uniqueFilters);
+                var uniqueFilter = CreateRangeForDuplicateField<T>(firstDuplicateField.ParentPropertyName, fieldName, uniqueFilters);
                 filters.Add(uniqueFilter);
             }
 
@@ -61,18 +61,18 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         public Func<QueryContainerDescriptor<T>, QueryContainer> ComposeFilter<T>(FilterCriteriaArgs args)
             where T : class
         {
-            var fieldName = string.IsNullOrWhiteSpace(args.PropertyEntityName)
+            var fieldName = string.IsNullOrWhiteSpace(args.ParentPropertyName)
                                 ? args.PropertyName
-                                : $"{args.PropertyEntityName}.{args.PropertyName}";
+                                : $"{args.ParentPropertyName}.{args.PropertyName}";
 
-            if (!(args.PropertyFilterValue is DateFilterValue dateFilterValue))
+            if (!(args.FilterValue is DateFilterValue dateFilterValue))
             {
                 return descriptor => descriptor;
             }
 
             if (args.Operator == OperatorType.Different)
             {
-                return DifferentOperatorFilter<T>(fieldName, args.PropertyEntityName, dateFilterValue.Value);
+                return DifferentOperatorFilter<T>(fieldName, args.ParentPropertyName, dateFilterValue.Value);
             }
 
             IDateRangeQuery DateRange(DateRangeQueryDescriptor<T> descriptor)
@@ -86,7 +86,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                 return dateRangeQuery;
             }
 
-            return CreateFilter<T>(args.PropertyEntityName, DateRange);
+            return CreateFilter<T>(args.ParentPropertyName, DateRange);
         }
 
         private Func<QueryContainerDescriptor<T>, QueryContainer> CreateRangeForDuplicateField<T>(string                    propertyEntityName,
@@ -103,7 +103,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
 
                 foreach (var duplicateField in duplicateFields)
                 {
-                    if (!(duplicateField.PropertyFilterValue is DateFilterValue dateFilterValue))
+                    if (!(duplicateField.FilterValue is DateFilterValue dateFilterValue))
                     {
                         continue;
                     }
@@ -125,7 +125,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             ICollection<Func<QueryContainerDescriptor<T>, QueryContainer>> dateFilterQueries = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>();
             foreach (var duplicateField in duplicateOperatorFields)
             {
-                if (!(duplicateField.PropertyFilterValue is DateFilterValue dateFilterValue))
+                if (!(duplicateField.FilterValue is DateFilterValue dateFilterValue))
                 {
                     continue;
                 }
@@ -211,7 +211,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             ICollection<Func<QueryContainerDescriptor<T>, QueryContainer>> dateFilterQueries = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>();
             foreach (var duplicateField in duplicateOperatorFields)
             {
-                if (!(duplicateField.PropertyFilterValue is DateFilterValue dateFilterValue))
+                if (!(duplicateField.FilterValue is DateFilterValue dateFilterValue))
                 {
                     continue;
                 }

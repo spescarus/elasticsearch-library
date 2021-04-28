@@ -12,20 +12,20 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         public Func<QueryContainerDescriptor<T>, QueryContainer> ComposeFilter<T>(ICollection<FilterCriteriaArgs> filterCriteriaArgs)
             where T : class
         {
-            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.PropertyEntityName}.{field.PropertyName}")
+            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.ParentPropertyName}.{field.PropertyName}")
                                                     .Where(field => field.Count() > 1)
                                                     .SelectMany(field => field)
                                                     .ToList();
 
             var firstDuplicateField = duplicateFields.First();
-            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.PropertyEntityName)
+            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.ParentPropertyName)
                                 ? firstDuplicateField.PropertyName
-                                : $"{firstDuplicateField.PropertyEntityName}.{firstDuplicateField.PropertyName}";
+                                : $"{firstDuplicateField.ParentPropertyName}.{firstDuplicateField.PropertyName}";
 
             IList<Guid?> values = new List<Guid?>();
             foreach (var duplicateField in duplicateFields)
             {
-                if (!(duplicateField.PropertyFilterValue is GuidFilterValue guidFilterValue))
+                if (!(duplicateField.FilterValue is GuidFilterValue guidFilterValue))
                 {
                     continue;
                 }
@@ -34,7 +34,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             }
 
             QueryContainer GuidFilter(QueryContainerDescriptor<T> q) => q
-               .Nested(n => n.Path(firstDuplicateField.PropertyEntityName)
+               .Nested(n => n.Path(firstDuplicateField.ParentPropertyName)
                              .Query(q1 => q1.Terms(m => m.Field(fieldName)
                                                          .Terms(values))));
 
@@ -46,17 +46,17 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         {
             Func<QueryContainerDescriptor<T>, QueryContainer> filter = descriptor => descriptor;
 
-            if (!(args.PropertyFilterValue is GuidFilterValue guidFilterValue))
+            if (!(args.FilterValue is GuidFilterValue guidFilterValue))
             {
                 return filter;
             }
 
             if (!guidFilterValue.Value.HasValue)
             {
-                return ComposeDoesNotExistFilter<T>(args.PropertyEntityName, args.PropertyName, guidFilterValue);
+                return ComposeDoesNotExistFilter<T>(args.ParentPropertyName, args.PropertyName, guidFilterValue);
             }
 
-            if (string.IsNullOrWhiteSpace(args.PropertyEntityName))
+            if (string.IsNullOrWhiteSpace(args.ParentPropertyName))
             {
                 filter = q => q.Term(m => m.Field(args.PropertyName)
                                            .Value(guidFilterValue.Value)
@@ -64,11 +64,11 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             }
             else
             {
-                var fieldName = $"{args.PropertyEntityName}.{args.PropertyName}";
+                var fieldName = $"{args.ParentPropertyName}.{args.PropertyName}";
 
                 filter = q => q
                    .Nested(n => n
-                               .Path(args.PropertyEntityName)
+                               .Path(args.ParentPropertyName)
                                .Query(q1 => q1.Term(m => m
                                                         .Field(fieldName)
                                                         .Value(guidFilterValue.Value)

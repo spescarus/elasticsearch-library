@@ -13,15 +13,15 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         public Func<QueryContainerDescriptor<T>, QueryContainer> ComposeFilter<T>(ICollection<FilterCriteriaArgs> filterCriteriaArgs)
             where T : class
         {
-            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.PropertyEntityName}.{field.PropertyName}")
+            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.ParentPropertyName}.{field.PropertyName}")
                                                     .Where(field => field.Count() > 1)
                                                     .SelectMany(field => field)
                                                     .ToList();
 
             var firstDuplicateField = duplicateFields.First();
-            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.PropertyEntityName)
+            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.ParentPropertyName)
                                 ? firstDuplicateField.PropertyName
-                                : $"{firstDuplicateField.PropertyEntityName}.{firstDuplicateField.PropertyName}";
+                                : $"{firstDuplicateField.ParentPropertyName}.{firstDuplicateField.PropertyName}";
 
             var equalOperator = duplicateFields.Where(field => field.Operator == OperatorType.Equal)
                                                .ToList();
@@ -33,9 +33,9 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                                          .SelectMany(field => field)
                                          .ToList();
 
-            var duplicateOperatorRange = CreateRangeGroupForDuplicateField<T>(duplicateOperatorFields, firstDuplicateField.PropertyEntityName, fieldName);
-            var equalOperatorRange     = CreateRangeGroupForDuplicateField<T>(equalOperator,           firstDuplicateField.PropertyEntityName, fieldName);
-            var differentOperatorRange = CreateDifferentOperatorFilter<T>(differentOperator, firstDuplicateField.PropertyEntityName, fieldName);
+            var duplicateOperatorRange = CreateRangeGroupForDuplicateField<T>(duplicateOperatorFields, firstDuplicateField.ParentPropertyName, fieldName);
+            var equalOperatorRange     = CreateRangeGroupForDuplicateField<T>(equalOperator,           firstDuplicateField.ParentPropertyName, fieldName);
+            var differentOperatorRange = CreateDifferentOperatorFilter<T>(differentOperator, firstDuplicateField.ParentPropertyName, fieldName);
 
             IList<Func<QueryContainerDescriptor<T>, QueryContainer>> filters = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>
             {
@@ -50,7 +50,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                                                .ToList();
             if (uniqueFilters.Any())
             {
-                var uniqueFilter = CreateRangeForDuplicateField<T>(fieldName, firstDuplicateField.PropertyEntityName, uniqueFilters);
+                var uniqueFilter = CreateRangeForDuplicateField<T>(fieldName, firstDuplicateField.ParentPropertyName, uniqueFilters);
                 filters.Add(uniqueFilter);
             }
 
@@ -61,18 +61,18 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         public Func<QueryContainerDescriptor<T>, QueryContainer> ComposeFilter<T>(FilterCriteriaArgs args)
             where T : class
         {
-            var fieldName = string.IsNullOrWhiteSpace(args.PropertyEntityName)
+            var fieldName = string.IsNullOrWhiteSpace(args.ParentPropertyName)
                                 ? args.PropertyName
-                                : $"{args.PropertyEntityName}.{args.PropertyName}";
+                                : $"{args.ParentPropertyName}.{args.PropertyName}";
 
-            if (!(args.PropertyFilterValue is NumericFilterValue numericFilterValue))
+            if (!(args.FilterValue is NumericFilterValue numericFilterValue))
             {
                 return descriptor => descriptor;
             }
 
             if (args.Operator == OperatorType.Different)
             {
-                return DifferentOperatorFilter<T>(fieldName, args.PropertyEntityName, numericFilterValue.Value);
+                return DifferentOperatorFilter<T>(fieldName, args.ParentPropertyName, numericFilterValue.Value);
             }
 
             INumericRangeQuery NumericRange(NumericRangeQueryDescriptor<T> descriptor)
@@ -88,14 +88,14 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             }
 
             Func<QueryContainerDescriptor<T>, QueryContainer> filter;
-            if (string.IsNullOrWhiteSpace(args.PropertyEntityName))
+            if (string.IsNullOrWhiteSpace(args.ParentPropertyName))
             {
                 filter = q => q.Range(NumericRange);
             }
             else
             {
                 filter = q => q.Nested(n => n
-                                           .Path(args.PropertyEntityName)
+                                           .Path(args.ParentPropertyName)
                                            .Query(query => query.Range(NumericRange))
                 );
             }
@@ -117,7 +117,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
 
                 foreach (var duplicateField in duplicateFields)
                 {
-                    if (!(duplicateField.PropertyFilterValue is NumericFilterValue value))
+                    if (!(duplicateField.FilterValue is NumericFilterValue value))
                     {
                         continue;
                     }
@@ -152,7 +152,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             ICollection<Func<QueryContainerDescriptor<T>, QueryContainer>> numericFilterQueries = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>();
             foreach (var duplicateField in duplicateOperatorFields)
             {
-                if (!(duplicateField.PropertyFilterValue is NumericFilterValue numericFilterValue))
+                if (!(duplicateField.FilterValue is NumericFilterValue numericFilterValue))
                 {
                     continue;
                 }
@@ -225,7 +225,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             ICollection<Func<QueryContainerDescriptor<T>, QueryContainer>> numericFilterQueries = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>();
             foreach (var duplicateField in duplicateOperatorFields)
             {
-                if (!(duplicateField.PropertyFilterValue is NumericFilterValue numericFilterValue))
+                if (!(duplicateField.FilterValue is NumericFilterValue numericFilterValue))
                 {
                     continue;
                 }

@@ -108,16 +108,16 @@ namespace SP.ElasticSearchLibrary.Requests
                 }
                 else
                 {
-                    isTextField = string.IsNullOrWhiteSpace(sortOption.PropertyEntityName)
+                    isTextField = string.IsNullOrWhiteSpace(sortOption.ParentPropertyName)
                                       ? await _elasticSearchService.CheckIfFieldTypeIsTextAsync<TIndexItem>(sortOption.PropertyName)
-                                      : await _elasticSearchService.CheckIfFieldTypeIsTextAsync<TIndexItem>(sortOption.PropertyName, sortOption.PropertyEntityName);
+                                      : await _elasticSearchService.CheckIfFieldTypeIsTextAsync<TIndexItem>(sortOption.PropertyName, sortOption.ParentPropertyName);
                 }
 
                 if (isTextField)
                 {
-                    sortOption.PropertyName = string.IsNullOrWhiteSpace(sortOption.PropertyEntityName)
+                    sortOption.PropertyName = string.IsNullOrWhiteSpace(sortOption.ParentPropertyName)
                                                   ? $"{sortOption.PropertyName}.keyword"
-                                                  : $"{sortOption.PropertyEntityName}.{sortOption.PropertyName}.keyword";
+                                                  : $"{sortOption.ParentPropertyName}.{sortOption.PropertyName}.keyword";
                 }
 
                 switch (sortOption.SortOrder)
@@ -142,7 +142,7 @@ namespace SP.ElasticSearchLibrary.Requests
         private static void SortDescending(SortOptionArgs             sortOption,
                                            SortDescriptor<TIndexItem> descriptor)
         {
-            if (string.IsNullOrWhiteSpace(sortOption.PropertyEntityName))
+            if (string.IsNullOrWhiteSpace(sortOption.ParentPropertyName))
             {
                 descriptor.Field(f => f
                                      .Field(sortOption.PropertyName)
@@ -153,7 +153,7 @@ namespace SP.ElasticSearchLibrary.Requests
             {
                 descriptor.Field(f => f
                                      .Nested(n => n
-                                                .Path(sortOption.PropertyEntityName)
+                                                .Path(sortOption.ParentPropertyName)
                                       )
                                      .Field(sortOption.PropertyName)
                                      .Descending()
@@ -164,7 +164,7 @@ namespace SP.ElasticSearchLibrary.Requests
         private static void SortAscending(SortOptionArgs             sortOption,
                                           SortDescriptor<TIndexItem> descriptor)
         {
-            if (string.IsNullOrWhiteSpace(sortOption.PropertyEntityName))
+            if (string.IsNullOrWhiteSpace(sortOption.ParentPropertyName))
             {
                 descriptor.Field(f => f
                                      .Field(sortOption.PropertyName)
@@ -175,7 +175,7 @@ namespace SP.ElasticSearchLibrary.Requests
             {
                 descriptor.Field(f => f
                                      .Nested(n => n
-                                                .Path(sortOption.PropertyEntityName)
+                                                .Path(sortOption.ParentPropertyName)
                                       )
                                      .Field(sortOption.PropertyName)
                                      .Ascending()

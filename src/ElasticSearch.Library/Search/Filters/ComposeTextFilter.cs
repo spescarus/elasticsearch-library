@@ -14,16 +14,16 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             where T : class
         {
             var duplicateFields = filterCriteriaArgs
-                                 .GroupBy(field => $"{field.PropertyEntityName}.{field.PropertyName}")
+                                 .GroupBy(field => $"{field.ParentPropertyName}.{field.PropertyName}")
                                  .Where(field => field.Count() > 1)
                                  .SelectMany(field => field)
                                  .ToList();
 
             var firstDuplicateField = duplicateFields.First();
 
-            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.PropertyEntityName)
+            var fieldName = string.IsNullOrWhiteSpace(firstDuplicateField.ParentPropertyName)
                                 ? firstDuplicateField.PropertyName
-                                : $"{firstDuplicateField.PropertyEntityName}.{firstDuplicateField.PropertyName}";
+                                : $"{firstDuplicateField.ParentPropertyName}.{firstDuplicateField.PropertyName}";
 
             var duplicateFieldsEqualOperator = duplicateFields.Where(field => field.Operator == OperatorType.Equal)
                                                               .ToList();
@@ -34,7 +34,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                .ToList();
             QueryContainer GroupDuplicateFieldsEqualOperatorFilters(QueryContainerDescriptor<T> q) => q.Bool(b => b.Should(equalOperatorFilters));
 
-            var differentOperatorQueries = ComposeDuplicateDifferentOperatorFilter<T>(duplicateFieldsDifferentOperator, firstDuplicateField.PropertyEntityName, fieldName);
+            var differentOperatorQueries = ComposeDuplicateDifferentOperatorFilter<T>(duplicateFieldsDifferentOperator, firstDuplicateField.ParentPropertyName, fieldName);
 
             IList<Func<QueryContainerDescriptor<T>, QueryContainer>> queries = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>()
             {
@@ -61,7 +61,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         {
             Func<QueryContainerDescriptor<T>, QueryContainer> filter;
 
-            if (!(args.PropertyFilterValue is TextFilterValue value))
+            if (!(args.FilterValue is TextFilterValue value))
             {
                 return null;
             }
@@ -71,7 +71,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                 return ComposeDifferentOperatorFilter<T>(args);
             }
 
-            if (string.IsNullOrWhiteSpace(args.PropertyEntityName))
+            if (string.IsNullOrWhiteSpace(args.ParentPropertyName))
             {
                 filter = args.Strict
                              ? q => q.Term(t => t.Field(args.PropertyName)
@@ -80,12 +80,12 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             }
             else
             {
-                var fieldName = $"{args.PropertyEntityName}.{args.PropertyName}";
+                var fieldName = $"{args.ParentPropertyName}.{args.PropertyName}";
 
                 filter = args.Strict
                              ? (Func<QueryContainerDescriptor<T>, QueryContainer>) (q => q
                                                                                           .Nested(n => n
-                                                                                                      .Path(args.PropertyEntityName)
+                                                                                                      .Path(args.ParentPropertyName)
                                                                                                       .Query(q1 => q1
                                                                                                                 .Term(t => t
                                                                                                                          .Field(fieldName)
@@ -95,7 +95,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                                                                                            ))
                              : q => q
                                 .Nested(n => n
-                                            .Path(args.PropertyEntityName)
+                                            .Path(args.ParentPropertyName)
                                             .Query(WildcardFilter<T>(value.Value, fieldName, args))
                                  );
             }
@@ -133,7 +133,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
             ICollection<Func<QueryContainerDescriptor<T>, QueryContainer>> textFilterQueries = new List<Func<QueryContainerDescriptor<T>, QueryContainer>>();
             foreach (var duplicateField in duplicateOperatorFields)
             {
-                if (!(duplicateField.PropertyFilterValue is TextFilterValue textFilterValue))
+                if (!(duplicateField.FilterValue is TextFilterValue textFilterValue))
                 {
                     continue;
                 }
@@ -165,11 +165,11 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         private static Func<QueryContainerDescriptor<T>, QueryContainer> ComposeDifferentOperatorFilter<T>(FilterCriteriaArgs args)
             where T : class
         {
-            var fieldName = string.IsNullOrWhiteSpace(args.PropertyEntityName)
+            var fieldName = string.IsNullOrWhiteSpace(args.ParentPropertyName)
                                 ? args.PropertyName
-                                : $"{args.PropertyEntityName}.{args.PropertyName}";
+                                : $"{args.ParentPropertyName}.{args.PropertyName}";
 
-            if (!(args.PropertyFilterValue is TextFilterValue textFilterValue))
+            if (!(args.FilterValue is TextFilterValue textFilterValue))
             {
                 return descriptor => descriptor;
             }
@@ -184,14 +184,14 @@ namespace SP.ElasticSearchLibrary.Search.Filters
                          )
                 );
 
-            if (string.IsNullOrWhiteSpace(args.PropertyEntityName))
+            if (string.IsNullOrWhiteSpace(args.ParentPropertyName))
             {
                 queryContainerDescriptor = QueryContainerDescriptor;
             }
             else
             {
                 queryContainerDescriptor = q => q.Nested(n => n
-                                                             .Path(args.PropertyEntityName)
+                                                             .Path(args.ParentPropertyName)
                                                              .Query(QueryContainerDescriptor)
                 );
             }

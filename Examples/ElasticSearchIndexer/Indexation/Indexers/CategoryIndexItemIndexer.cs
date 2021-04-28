@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using ElasticSearch.DataAccess;
 using ElasticSearch.DataAccess.Extensions.TaskExtensions;
 using ElasticSearch.DataAccess.Repositories;
 using ElasticSearch.Indexer.Indexation.Converters;

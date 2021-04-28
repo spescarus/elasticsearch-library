@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using AutoMapper;
 using ElasticSearch.Demo.UI.Services.Products.Responses;
 using ElasticSearch.Models.EsModels;
-using Nest;
 using SP.ElasticSearchLibrary;
 using SP.ElasticSearchLibrary.Requests;
 using SP.ElasticSearchLibrary.Search;

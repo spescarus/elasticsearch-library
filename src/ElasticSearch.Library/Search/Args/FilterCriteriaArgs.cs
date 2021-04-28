@@ -15,9 +15,9 @@ namespace SP.ElasticSearchLibrary.Search.Args
             set => _propertyName = value;
         }
 
-        public string       PropertyEntityName  { get; set; }
-        public OperatorType Operator            { get; set; } = OperatorType.Equal;
-        public bool         Strict              { get; set; }
-        public FilterValue  PropertyFilterValue { get; set; }
+        public string       ParentPropertyName { get; set; }
+        public OperatorType Operator           { get; set; } = OperatorType.Equal;
+        public bool         Strict             { get; set; }
+        public FilterValue  FilterValue        { get; set; }
     }
 }

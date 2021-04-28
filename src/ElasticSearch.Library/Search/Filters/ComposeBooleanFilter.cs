@@ -12,7 +12,7 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         public Func<QueryContainerDescriptor<T>, QueryContainer> ComposeFilter<T>(ICollection<FilterCriteriaArgs> filterCriteriaArgs)
             where T : class
         {
-            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.PropertyEntityName}.{field.PropertyName}")
+            var duplicateFields = filterCriteriaArgs.GroupBy(field => $"{field.ParentPropertyName}.{field.PropertyName}")
                                                     .Where(field => field.Count() > 1)
                                                     .SelectMany(field => field)
                                                     .ToList();
@@ -40,23 +40,23 @@ namespace SP.ElasticSearchLibrary.Search.Filters
         {
             Func<QueryContainerDescriptor<T>, QueryContainer> filter;
 
-            if (!(args.PropertyFilterValue is BooleanFilterValue value))
+            if (!(args.FilterValue is BooleanFilterValue value))
             {
                 return null;
             }
 
-            if (string.IsNullOrWhiteSpace(args.PropertyEntityName))
+            if (string.IsNullOrWhiteSpace(args.ParentPropertyName))
             {
                 filter = q => q.Term(t => t.Field(args.PropertyName)
                                            .Value(value.Value));
             }
             else
             {
-                var fieldName = $"{args.PropertyEntityName}.{args.PropertyName}";
+                var fieldName = $"{args.ParentPropertyName}.{args.PropertyName}";
 
                 filter = q => q
                    .Nested(n => n
-                               .Path(args.PropertyEntityName)
+                               .Path(args.ParentPropertyName)
                                .Query(q1 => q1
                                          .Term(t => t
                                                    .Field(fieldName)

@@ -6,6 +6,6 @@ namespace SP.ElasticSearchLibrary.Search.Args
     {
         public SortOrder SortOrder          { get; set; }
         public string        PropertyName       { get; set; }
-        public string        PropertyEntityName { get; set; }
+        public string        ParentPropertyName { get; set; }
     }
 }
